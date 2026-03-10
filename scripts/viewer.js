@@ -1,31 +1,43 @@
 // scripts/viewer.js
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const paperId = urlParams.get('id');
     const paperTitleEl = document.getElementById('paperTitle');
 
     const koPane = document.getElementById('koPane');
+    const koContent = document.getElementById('koContent');
     const origPane = document.getElementById('origPane');
+    const origFrame = document.getElementById('origFrame');
     const resizer = document.getElementById('resizer');
     const viewerContainer = document.getElementById('viewerContainer');
     const toggleSplitBtn = document.getElementById('toggleSplitBtn');
 
     let isSplitMode = false;
 
-    // dummy content for now
     if (paperId) {
-        paperTitleEl.textContent = `[${paperId}] 논문 뷰어`;
-        document.getElementById('koContent').innerHTML = `
-      <h1>한국어 번역본 (더미 데이터)</h1>
-      <p>ID: ${paperId}에 해당하는 논문입니다.</p>
-      <p>여기서부터 번역된 논문의 내용이 길게 이어진다고 가정합니다.</p>
-      <p style="height: 1500px; background: linear-gradient(to bottom, #f0f0f0, #e0e0e0); padding: 1rem; margin-top: 2rem; border-radius: 8px;">
-        (스크롤 테스트를 위한 긴 내용 영역)
-      </p>
-    `;
+        // 논문 데이터 로드 (data.js에서)
+        const paperMeta = typeof APP_DATA !== 'undefined'
+            ? APP_DATA.papers.find(p => p.id === paperId)
+            : null;
 
-        document.getElementById('origFrame').src = `https://arxiv.org/html/${paperId}`;
+        paperTitleEl.textContent = paperMeta ? paperMeta.title : `[${paperId}] 논문 뷰어`;
+
+        // 번역본(ko.html) 로드
+        try {
+            const response = await fetch(`papers/${paperId}/ko.html`);
+            if (response.ok) {
+                const koHtml = await response.text();
+                koContent.innerHTML = koHtml;
+            } else {
+                koContent.innerHTML = `<div class="loading">번역본을 찾을 수 없습니다. (${response.status})</div>`;
+            }
+        } catch (e) {
+            koContent.innerHTML = `<div class="loading">번역본 로드 중 오류가 발생했습니다.</div>`;
+        }
+
+        // 원문 로컬 파일 로드 (iframe cors 문제 해결)
+        origFrame.src = `papers/${paperId}/orig.html`;
     } else {
         paperTitleEl.textContent = "논문을 찾을 수 없습니다.";
     }
@@ -38,7 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
             origPane.style.display = 'block';
             viewerContainer.classList.add('split-mode');
 
-            // Default 50:50
             koPane.style.width = '50%';
             koPane.style.flex = 'none';
             origPane.style.width = '50%';
@@ -74,17 +85,15 @@ document.addEventListener('DOMContentLoaded', () => {
     resizer.addEventListener('mousedown', (e) => {
         isResizing = true;
         document.body.style.cursor = 'col-resize';
-        e.preventDefault(); // Prevent text selection
+        e.preventDefault();
     });
 
     document.addEventListener('mousemove', (e) => {
         if (!isResizing) return;
 
-        // Calculate relative position based on container
         const containerRect = viewerContainer.getBoundingClientRect();
         const newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
 
-        // Bounds check
         if (newWidth > 20 && newWidth < 80) {
             koPane.style.width = `${newWidth}%`;
             origPane.style.width = `${100 - newWidth}%`;
@@ -108,25 +117,46 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Calculate percentage
         const maxScrollLeft = koPane.scrollHeight - koPane.clientHeight;
         if (maxScrollLeft <= 0) return;
 
         const percentage = koPane.scrollTop / maxScrollLeft;
 
-        const maxScrollRight = origPane.scrollHeight - origPane.clientHeight;
-
-        // sync only if iframe allows it (CORS might block accessing iframe contents depending on the source)
-        // Note: since it's an arXiv link in iframe, we might run into cross-origin restrictions for scroll sync 
-        // unless we host the orig.html locally as well!
         try {
-            // For local iframe documents
-            const frameDoc = document.getElementById('origFrame').contentWindow;
+            const frameWin = origFrame.contentWindow;
+            const frameDoc = frameWin.document;
+            // 로컬 파일이므로 접근 가능
+            const maxScrollRight = frameDoc.body.scrollHeight - frameWin.innerHeight;
+
             isSyncingRight = true;
-            frameDoc.scrollTo(0, percentage * (frameDoc.document.body.scrollHeight - frameDoc.innerHeight));
+            frameWin.scrollTo(0, percentage * maxScrollRight);
         } catch (e) {
-            // If cross-origin, we can't sync the iframe content easily without local proxy
-            console.log('Cross-origin scroll sync blocked. Will require local orig.html hosting.');
+            console.warn('Scroll sync failed:', e);
+        }
+    });
+
+    origFrame.addEventListener('load', () => {
+        try {
+            origFrame.contentWindow.addEventListener('scroll', () => {
+                if (!isSplitMode || isSyncingRight) {
+                    isSyncingRight = false;
+                    return;
+                }
+
+                const frameWin = origFrame.contentWindow;
+                const frameDoc = frameWin.document;
+                const maxScrollRight = frameDoc.body.scrollHeight - frameWin.innerHeight;
+
+                if (maxScrollRight <= 0) return;
+
+                const percentage = frameWin.scrollY / maxScrollRight;
+                const maxScrollLeft = koPane.scrollHeight - koPane.clientHeight;
+
+                isSyncingLeft = true;
+                koPane.scrollTo(0, percentage * maxScrollLeft);
+            });
+        } catch (e) {
+            console.warn('Could not attach scroll listener to iframe:', e);
         }
     });
 });
