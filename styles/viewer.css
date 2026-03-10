@@ -1,0 +1,122 @@
+/* viewer.css */
+
+body {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Prevent body scrolling, allow pane scrolling */
+}
+
+.viewer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    z-index: 10;
+    height: 64px;
+}
+
+.viewer-controls {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.viewer-title {
+    font-size: 1.125rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 50vw;
+}
+
+.viewer-actions button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.viewer-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.doc-pane {
+    flex: 1;
+    height: 100%;
+    overflow-y: auto;
+    padding: 2rem;
+    scroll-behavior: smooth;
+}
+
+.doc-pane::-webkit-scrollbar {
+    width: 8px;
+}
+
+.doc-pane::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+.doc-pane::-webkit-scrollbar-thumb {
+    background-color: #CBD5E1;
+    border-radius: 4px;
+}
+
+.doc-content {
+    max-width: 800px;
+    margin: 0 auto;
+    font-size: 1.125rem;
+    line-height: 1.8;
+}
+
+/* iframe default styling */
+#origFrame {
+    width: 100%;
+    height: calc(100vh - 8rem);
+    border: none;
+}
+
+/* Split View Resizer */
+.resizer {
+    width: 6px;
+    background-color: var(--border-color);
+    cursor: col-resize;
+    display: none;
+    /* Only visible in split view */
+    transition: background-color 0.2s;
+    z-index: 5;
+}
+
+.resizer:hover,
+.resizer:active {
+    background-color: var(--accent-color);
+}
+
+.split-mode .doc-pane {
+    /* When split view is active */
+}
+
+.split-mode .resizer {
+    display: block;
+}
+
+@media (max-width: 768px) {
+
+    /* On mobile, split view could be replaced by tabs instead */
+    .viewer-title {
+        max-width: 150px;
+    }
+}

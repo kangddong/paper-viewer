@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>논문 뷰어 | Paper Viewer</title>
+    <link rel="stylesheet" href="styles/index.css">
+    <link rel="stylesheet" href="styles/viewer.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+</head>
+
+<body>
+
+    <header class="viewer-header">
+        <div class="viewer-controls">
+            <a href="index.html" class="btn btn-outline back-btn">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                돌아가기
+            </a>
+            <h1 id="paperTitle" class="viewer-title">논문을 불러오는 중...</h1>
+        </div>
+        <div class="viewer-actions">
+            <button id="toggleSplitBtn" class="btn btn-primary">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h2m0-16V5a2 2 0 012-2h2a2 2 0 012 2v16a2 2 0 01-2 2h-2a2 2 0 01-2-2m0-16h2a2 2 0 012 2v12a2 2 0 01-2 2h-2" />
+                </svg>
+                원문과 함께 보기
+            </button>
+        </div>
+    </header>
+
+    <main class="viewer-container" id="viewerContainer">
+
+        <!-- 번역 뷰 -->
+        <div class="doc-pane" id="koPane">
+            <div class="doc-content" id="koContent">
+                <div class="loading">한국어 번역본을 불러오고 있습니다...</div>
+            </div>
+        </div>
+
+        <!-- 구분선 (크기 조절용) -->
+        <div class="resizer" id="resizer"></div>
+
+        <!-- 원문 뷰 -->
+        <div class="doc-pane" id="origPane" style="display: none;">
+            <div class="doc-content" id="origContent">
+                <div class="loading">원문을 불러오고 있습니다...</div>
+                <iframe id="origFrame" title="Original Paper iframe"></iframe>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="scripts/viewer.js"></script>
+</body>
+
+</html>
