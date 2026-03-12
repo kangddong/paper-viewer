@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         origFrame.src = `papers/${paperId}/orig.html`;
     } else {
         paperTitleEl.textContent = "논문을 찾을 수 없습니다.";
+        koContent.innerHTML = `<div class="loading">잘못된 접근입니다. 메인 페이지(index.html)에서 논문을 선택해주세요.</div>`;
+        origFrame.src = 'about:blank';
     }
 
     // Split View Toggle Logic
@@ -85,6 +87,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     resizer.addEventListener('mousedown', (e) => {
         isResizing = true;
         document.body.style.cursor = 'col-resize';
+        viewerContainer.classList.add('is-resizing'); // 리사이징 상태 클래스 추가
         e.preventDefault();
     });
 
@@ -104,6 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (isResizing) {
             isResizing = false;
             document.body.style.cursor = 'default';
+            viewerContainer.classList.remove('is-resizing');
         }
     });
 
