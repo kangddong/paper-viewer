@@ -46,7 +46,14 @@
 ```
 
 ## 🔄 워크플로우 (신규 논문 추가 시)
-1. 사용자가 arXiv HTML 링크(예: https://arxiv.org/html/2603.05225v1)를 에이전트에게 전달.
-2. 에이전트는 해당 링크의 HTML과 메타 데이터를 스크래핑.
-3. 한국어로 번역 작업을 수행하여 `papers/[ID]/ko.html` 등을 생성.
-4. `index.html` 혹은 `data.json`의 리스트에 해당 논문을 업데이트.
+1. **자동 수집 스크립트 실행**:
+   ```bash
+   python scripts/init_paper.py [arXiv_HTML_URL]
+   ```
+   - 이 명령어 하나로 폴더 생성, 원문 다운로드, 이미지 수집, `meta.json` 생성, `data.js` 업데이트가 완료됩니다.
+2. **번역 작업 수행**:
+   - 생성된 `papers/[ID]/ko.html` 파일에 번역 내용을 작성합니다.
+   - `viewer.css`에 정의된 프리미엄 컴포넌트(`info-box`, `insight-list`, `table-grid` 등)를 활용합니다.
+3. **최종 확인**:
+   - 로컬 서버에서 `paper.html?id=[ID]` 경로로 접속하여 레이아웃 및 스크롤 동기화를 확인합니다.
+
