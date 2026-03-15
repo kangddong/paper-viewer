@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const paperListElement = document.getElementById('paperList');
     const searchInput = document.getElementById('searchInput');
+    const resetFilters = document.getElementById('resetFilters');
     const gridViewBtn = document.getElementById('gridViewBtn');
     const listViewBtn = document.getElementById('listViewBtn');
 
@@ -28,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="paper-date">${paper.date || ''}</span>
         </div>
         <h2 class="paper-title">${paper.title}</h2>
-        <p class="paper-abstract">${shortAbstract}</p>
+        <p class="paper-abstract">${shortAbstract.replace(/(인공지능|AI|하드웨어|HW)/g, '<span class="highlight-dotted">$1</span>')}</p>
         <div class="card-actions">
           <a href="${paper.originalUrl}" target="_blank" class="btn btn-outline">원문 보기</a>
           <a href="paper.html?id=${paper.id}" class="btn btn-primary">번역본 읽기</a>
@@ -60,6 +61,11 @@ document.addEventListener('DOMContentLoaded', () => {
             (p.abstract && p.abstract.toLowerCase().includes(query))
         );
         renderPapers(filtered);
+    });
+
+    resetFilters.addEventListener('click', () => {
+        searchInput.value = '';
+        renderPapers();
     });
 
     // Initial render

@@ -20,7 +20,15 @@
 
   <main class="container">
     <div class="controls">
-      <input type="text" id="searchInput" placeholder="논문 제목이나 저자로 검색..." class="search-input">
+      <div style="display: flex; gap: 10px; flex: 1; max-width: 500px; align-items: center;">
+        <input type="text" id="searchInput" placeholder="논문 제목이나 저자로 검색..." class="search-input" style="flex: 1;">
+        <button id="resetFilters" class="reset-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"></path>
+          </svg>
+          초기화
+        </button>
+      </div>
       <div class="view-toggles">
         <button id="gridViewBtn" class="toggle-btn active" aria-label="그리드 뷰">
           <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">

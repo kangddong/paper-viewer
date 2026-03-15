@@ -138,3 +138,14 @@ h1, h2, h3, h4 {
     padding: 1rem;
   }
 }
+
+/* Highlight dotted style */
+.highlight-dotted {
+  position: relative;
+  display: inline;
+  background-image: linear-gradient(to right, var(--accent-color) 50%, transparent 50%);
+  background-position: 0 95%;
+  background-repeat: repeat-x;
+  background-size: 8px 2px;
+  padding-bottom: 2px;
+}
