@@ -33,3 +33,16 @@
 | **Physical AI** | 물리적 AI | 물리적 세계에서 행동하고 상호작용하는 AI (로봇 등) |
 | **Embodied Agent** | 가상/실체형 에이전트 | 신체를 지니고 물리적 환경에서 작용하는 지능형 대리인 |
 | **PPA (Power, Performance, Area)** | PPA (전력, 성능, 면적) | 반도체 설계의 3대 핵심 평가 지표 |
+| **Attention** | 어텐션 | 문맥에서 중요한 부분에 집중하는 매커니즘 |
+| **Self-Attention** | 셀프 어텐션 | 자기 자신의 요소들 사이의 관계를 계산하는 어텐션 |
+| **Multi-Head Attention** | 멀티 헤드 어텐션 | 여러 개의 어텐션을 병렬로 수행하는 구조 |
+| **Encoder / Decoder** | 인코더 / 디코더 | 정보를 부호화하고 복호화하는 핵심 구성 요소 |
+| **Query, Key, Value** | 쿼리, 키, 밸류 | 어텐션 계산에 사용되는 세 가지 벡터 |
+| **Recurrent** | 순환형 / 재귀형 | 시퀀스 데이터를 순차적으로 처리하는 방식 (RNN 등) |
+| **Convolutional** | 합성곱 / 컨볼루션 | 국소적 특징을 추출하는 신경망 방식 (CNN 등) |
+| **Sequence Transduction** | 시퀀스 변환 | 하나의 시퀀스를 다른 시퀀스로 바꾸는 작업 |
+| **BLEU** | BLEU | 기계 번역 결과의 품질을 측정하는 지표 |
+| **Parallelize / Parallelizable** | 병렬화 / 병렬화 가능 | 여러 연산을 동시에 처리할 수 있음 |
+| **Positional Encoding** | 위치 인코딩 | 시퀀스 내 단어의 순서 정보를 제공하는 기법 |
+| **Feed-forward** | 피드포워드 / 순전파 | 데이터가 한 방향으로만 흐르는 신경망 구조 |
+| **State-of-the-Art (SOTA)** | 최첨단 / SOTA | 현재 가장 우수한 성능을 보이는 기술 수준 |
