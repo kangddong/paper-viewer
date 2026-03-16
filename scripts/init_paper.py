@@ -3,21 +3,77 @@ import sys
 import json
 import re
 import urllib.request
+import urllib.parse
 from bs4 import BeautifulSoup
 from datetime import datetime
 
+def clean_text(text):
+    if not text:
+        return ""
+    # Remove excessive whitespace and newlines
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+def clean_authors(text: str) -> str:
+    if not text:
+        return ""
+    # arXiv authors div often contains emails, footnotes, "Equal contribution" etc.
+    # Remove emails
+    text = re.sub(r'[\w\.-]+@[\w\.-]+', '', text)
+    # Remove footnotemarks (common in arXiv)
+    text = re.sub(r'footnotemark\s*:\s*\d+', '', text, flags=re.I)
+    # Remove specific affiliations and unwanted text frequently found in ar5iv author divs
+    patterns = [
+        r'Equal contribution',
+        r'Listing order is random',
+        r'Work performed while at.*',
+        r'Google Brain',
+        r'Google Research',
+        r'University of Toronto',
+        r'[\w\s]*Research',
+        r'[\w\s]*Brain',
+        r'Jakob proposed.*',
+        r'Ashish, with Illia.*',
+        r'Noam proposed.*',
+        r'Niki designed.*',
+        r'Llion also.*',
+        r'Lukasz and Aidan.*',
+        r'Provided proper attribution is provided.*works\.'
+    ]
+    for p in patterns:
+        text = re.sub(p, '', text, flags=re.I | re.DOTALL)
+    
+    # Remove dangling numbers (sometimes superscript links like 1, 2)
+    text = re.sub(r'\b\d+\b', '', text)
+    
+    # Replace common author separators with commas
+    text = text.replace('&', ',').replace(';', ',')
+    
+    # Flatten and clean
+    text = clean_text(text)
+    
+    # Limit number of commas and filter out very short parts or common academic filler
+    parts = []
+    for p in text.split(','):
+        p = p.strip()
+        if p and len(p) > 2 and not re.match(r'^(and|with|the)$', p, re.I):
+            parts.append(p)
+    
+    return ", ".join(parts)
+
 def init_paper(url):
     # 1. Extract Paper ID from URL
-    # Example URL: https://arxiv.org/html/2403.00001v1 or https://arxiv.org/abs/2403.00001
     id_match = re.search(r'(?:html|abs)/([^/]+)', url)
     if not id_match:
         print("Error: Could not extract Paper ID from URL.")
         return
     
     paper_id = id_match.group(1).split('?')[0].split('#')[0]
-    # If it's an /abs/ link, convert to /html/ for downloading
+    
     if "/abs/" in url:
         url = url.replace("/abs/", "/html/")
+    
+    base_url = url if url.endswith('/') else url + '/'
     
     print(f"[*] Processing Paper ID: {paper_id}")
     print(f"[*] Targeted HTML URL: {url}")
@@ -32,8 +88,7 @@ def init_paper(url):
     orig_html_path = f"{base_path}/orig.html"
     print(f"[*] Downloading original HTML...")
     try:
-        # Use a User-Agent to avoid being blocked
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+        headers = {'User-Agent': 'Mozilla/5.0'}
         req = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(req) as response:
             html_content = response.read().decode('utf-8')
@@ -47,56 +102,94 @@ def init_paper(url):
     # 4. Parse Metadata and Images
     soup = BeautifulSoup(html_content, 'html.parser')
     
+    # Improved metadata extraction targeting arXiv/ar5iv classes
     title = ""
-    title_el = soup.find('h1', class_='title')
-    if title_el:
-        title = title_el.get_text(strip=True)
-        if title.startswith("Title:"):
-            title = title[6:].strip()
+    # 1. Try <title> tag first for high-level title
+    if soup.title and soup.title.string:
+        title = clean_text(soup.title.string)
+    
+    # 2. Try to find the document title in the body (more accurate for ar5iv)
+    title_el = soup.find(['h1', 'h2'], class_=re.compile(r'ltx_title_document', re.I))
+    if not title_el:
+        # Fallback to general title class, but skip TOC entries
+        # TOC entries often use ltx_ref_title or are inside a nav
+        body = soup.body
+        if body:
+            # Look for title-like elements that are not in navigation
+            for el in body.find_all(['h1', 'h2', 'span'], class_=re.compile(r'(ltx_title|title)', re.I)):
+                if not el.find_parent('nav') and not any(p_class and 'toc' in str(p_class).lower() for p_class in el.get('class', [])):
+                    text = clean_text(el.get_text())
+                    if text and text.lower() != "abstract" and len(text) > 5:
+                        title = text
+                        break
 
     authors = ""
-    authors_el = soup.find('div', class_='authors')
+    # Prioritize div with class ltx_authors
+    authors_el = soup.find('div', class_=re.compile(r'ltx_authors', re.I))
+    if not authors_el:
+        authors_el = soup.find(class_=re.compile(r'ltx_authors', re.I))
+    if not authors_el:
+        authors_el = soup.find(['div', 'span'], class_=re.compile(r'authors?', re.I))
+    
     if authors_el:
-        authors = authors_el.get_text(strip=True)
+        authors = clean_authors(authors_el.get_text())
 
     abstract = ""
-    abstract_el = soup.find('div', class_='abstract')
+    # Try ar5iv specific class
+    abstract_el = soup.find(class_=re.compile(r'ltx_abstract', re.I))
+    if not abstract_el:
+        abstract_el = soup.find(['div', 'section'], class_=re.compile(r'abstract', re.I))
+    
     if abstract_el:
-        abstract_text = abstract_el.get_text(strip=True)
-        if abstract_text.startswith("Abstract:"):
-            abstract = abstract_text[9:].strip()
-        else:
-            abstract = abstract_text
+        abs_text = abstract_el.get_text(separator=' ', strip=True)
+        # Remove any leading "Abstract" text
+        abs_text = re.sub(r'^abstract[:\s]*', '', abs_text, flags=re.I)
+        abstract = clean_text(abs_text)
 
     # 5. Download Images
     img_tags = soup.find_all('img')
-    print(f"[*] Found {len(img_tags)} images. Downloading...")
+    print(f"[*] Found {len(img_tags)} images. Checking...")
     
+    downloaded_count = 0
+    headers = {'User-Agent': 'Mozilla/5.0'}
     for img in img_tags:
         src = img.get('src')
-        if src:
-            # Handle relative paths for arXiv
-            img_url = f"{url}/{src}" if not src.startswith('http') else src
-            img_name = os.path.basename(src)
-            img_path = os.path.join(figures_path, img_name)
+        if not src or src.startswith('data:'):
+            continue
             
-            try:
-                print(f"    - Downloading {img_name}...")
-                req = urllib.request.Request(img_url, headers=headers)
-                with urllib.request.urlopen(req) as response:
-                    with open(img_path, "wb") as f:
-                        f.write(response.read())
-            except Exception as e:
-                print(f"    - Failed to download {img_name}: {e}")
+        if src.startswith(paper_id):
+            parent_base = os.path.dirname(url.rstrip('/')) + '/'
+            img_url = urllib.parse.urljoin(parent_base, src)
+        else:
+            img_url = urllib.parse.urljoin(base_url, src)
+            
+        img_name = os.path.basename(src)
+        if len(img_name) > 100 or ';' in img_name:
+            continue
+            
+        img_path = os.path.join(figures_path, img_name)
+        
+        try:
+            print(f"    - Downloading {img_name}...")
+            req = urllib.request.Request(img_url, headers=headers)
+            with urllib.request.urlopen(req) as response:
+                with open(img_path, "wb") as f:
+                    f.write(response.read())
+            downloaded_count += 1
+        except Exception as e:
+            print(f"    - Failed to download {img_name}: {e}")
+
+    print(f"[*] Successfully downloaded {downloaded_count} images.")
 
     # 6. Create meta.json
+    curr_date = datetime.now().strftime("%Y-%m-%d")
     meta = {
         "id": paper_id,
         "title": title,
         "authors": authors,
         "abstract": abstract,
         "url": url,
-        "date": datetime.now().strftime("%Y-%m-%d")
+        "date": curr_date
     }
     
     with open(f"{base_path}/meta.json", "w", encoding="utf-8") as f:
@@ -138,13 +231,6 @@ def init_paper(url):
             <p>본문 번역을 여기에 작성하세요...</p>
         </section>
 
-        <!-- 
-        TIP: 
-        1. 이미지 삽입 시: <figure><img src="figures/이미지명.png"><figcaption>설정</figcaption></figure>
-        2. 하이라이트 박스: <div class="info-box">...</div>
-        3. 표-카드 변환: <div class="table-grid"><div class="table-card">...</div></div>
-        -->
-
     </div>
 </body>
 </html>
@@ -154,37 +240,38 @@ def init_paper(url):
     print(f"[*] Created skeleton ko.html")
 
 
-    # 8. Update scripts/data.js (Simple append strategy)
+    # 8. Update scripts/data.js (Robust update)
     print(f"[*] Updating scripts/data.js...")
     try:
         with open("scripts/data.js", "r", encoding="utf-8") as f:
             data_content = f.read()
         
-        # Look for the end of the papers array
-        # This is a bit hacky but works for the current structure
-        new_entry = f""",
+        if f'id: "{paper_id}"' in data_content:
+            print(f"[*] Paper {paper_id} already exists in data.js. Skipping list update.")
+        else:
+            safe_title = title.replace('"', '\\"')
+            safe_authors = authors.replace('"', '\\"')
+            safe_abstract = abstract[:200].replace('"', '\\"').replace('\n', ' ')
+            
+            new_entry = f"""
     {{
       id: "{paper_id}",
-      title: "{title}",
-      authors: "{authors}",
-      date: "{meta['date']}",
-      abstract: "{abstract[:150]}...",
+      title: "{safe_title}",
+      authors: "{safe_authors}",
+      date: "{curr_date}",
+      abstract: "{safe_abstract}...",
       originalUrl: "{url}"
     }}"""
-        
-        # Insert before the closing bracket of the array
-        updated_content = re.sub(r'\]\s*\}\s*;', new_entry + r'\n  ]\n};', data_content)
-        
-        with open("scripts/data.js", "w", encoding="utf-8") as f:
-            f.write(updated_content)
-        print(f"[*] scripts/data.js updated.")
+            
+            updated_content = re.sub(r'(\s*)(\]\s*\}\s*;)', r',\1' + new_entry + r'\1\2', data_content, flags=re.MULTILINE)
+            
+            with open("scripts/data.js", "w", encoding="utf-8") as f:
+                f.write(updated_content)
+            print(f"[*] scripts/data.js updated.")
     except Exception as e:
         print(f"[*] Warning: Could not update scripts/data.js automatically: {e}")
 
     print(f"\n[✔] Setup complete for {paper_id}!")
-    print(f"    - Original: {orig_html_path}")
-    print(f"    - Translation: {base_path}/ko.html")
-    print(f"    - Metadata: {base_path}/meta.json")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

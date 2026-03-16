@@ -46,14 +46,17 @@
 ```
 
 ## 🔄 워크플로우 (신규 논문 추가 시)
-1. **자동 수집 스크립트 실행**:
+1. **자동 수집 및 기초 세팅**:
    ```bash
    python scripts/init_paper.py [arXiv_HTML_URL]
    ```
-   - 이 명령어 하나로 폴더 생성, 원문 다운로드, 이미지 수집, `meta.json` 생성, `data.js` 업데이트가 완료됩니다.
-2. **번역 작업 수행**:
-   - 생성된 `papers/[ID]/ko.html` 파일에 번역 내용을 작성합니다.
-   - `viewer.css`에 정의된 프리미엄 컴포넌트(`info-box`, `insight-list`, `table-grid` 등)를 활용합니다.
+   - 이 명령어 하나로 폴더 생성, 원문 다운로드, 이미지 수집, `meta.json` 생성, `ko.html` 스켈레톤 생성, `data.js` 업데이트가 완료됩니다.
+2. **번역 계획 수립 및 수행**:
+   - [TRANSLATION_PLAN.md](file:///c:/Users/rkdeh/Desktop/dev/vibe_coding/paper-viewer/TRANSLATION_PLAN.md)의 4단계 워크플로우(분석→작업→통합→검증)에 따라 번역을 진행합니다.
+   - 번역 시 [words.md](file:///c:/Users/rkdeh/Desktop/dev/vibe_coding/paper-viewer/words.md) 용어집을 반드시 준수하여 일관성을 유지합니다.
+   - `viewer.css`에 정의된 프리미엄 컴포넌트(`info-box`, `insight-list`, `table-grid` 등)를 활용하여 `ko.html`을 채웁니다.
 3. **최종 확인**:
    - 로컬 서버에서 `paper.html?id=[ID]` 경로로 접속하여 레이아웃 및 스크롤 동기화를 확인합니다.
 
+## Version Control
+1. 의미있는 각 작업 단위당 git commit을 수행한다.
