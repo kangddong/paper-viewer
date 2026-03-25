@@ -1,0 +1,454 @@
+<div class="fade-in">
+    <h1>LeWorldModel: 픽셀에서 직접 학습하는 안정적인 종단간 공동 임베딩 예측 월드 모델</h1>
+    <p class="authors">Lucas Maes, Quentin Le Lidec, Damien Scieur, Yann LeCun, Randall Balestriero</p>
+    <p><strong>원문 제목:</strong> LeWorldModel: Stable End-to-End Joint-Embedding Predictive Architecture from Pixels</p>
+    <p><strong>핵심 주제:</strong> JEPA, 월드 모델, 잠재 계획, 오프라인 제어, 표현 붕괴 방지</p>
+
+    <h2>초록 (Abstract)</h2>
+    <p>
+        공동 임베딩 예측 아키텍처(JEPA)는 압축된 잠재 공간에서 월드 모델을 학습하는 유망한 틀이지만, 기존 접근은 표현 붕괴를 막기 위해 다항 손실, 지수이동평균(EMA), 사전학습 인코더, 보조 감독 신호에 크게 의존했습니다.
+        이 논문은 <strong>LeWorldModel(LeWM)</strong>을 제안합니다. LeWM은 원시 픽셀로부터 <strong>종단간(end-to-end)으로 안정적으로 학습되는 최초의 JEPA 기반 월드 모델</strong>이며,
+        다음 임베딩 예측 손실과 가우시안 잠재 분포를 강제하는 SIGReg 정규화기라는 <strong>단 두 개의 손실 항</strong>만 사용합니다.
+    </p>
+    <p>
+        유일한 다른 종단간 대안 대비 조정해야 할 손실 계수를 여섯 개에서 하나로 줄였고, 파라미터 1,500만 개 규모 모델을 단일 GPU에서 수 시간 내 학습할 수 있습니다.
+        그 결과, LeWM은 foundation-model 기반 월드 모델보다 최대 48배 빠르게 계획하면서도 다양한 2D/3D 제어 과제에서 경쟁력 있는 성능을 유지합니다.
+        더 나아가 잠재 공간 프로빙과 기대 위반(VoE) 평가를 통해, 이 잠재 표현이 물리 구조를 의미 있게 담고 있고 물리적으로 불가능한 사건을 신뢰성 있게 감지함을 보입니다.
+    </p>
+
+    <div class="info-box">
+        <strong>한눈에 보는 기여</strong>
+        <ul class="insight-list">
+            <li>원시 픽셀에서 바로 학습되는 안정적인 JEPA 월드 모델을 제시한다.</li>
+            <li>복잡한 붕괴 방지 휴리스틱 없이도 두 항 손실만으로 학습을 안정화한다.</li>
+            <li>Push-T, Reacher 등 어려운 과제에서 PLDM을 앞서고 DINO-WM과 경쟁한다.</li>
+            <li>잠재 공간이 물리량을 보존하며, 비물리적 사건에 더 큰 놀람을 부여함을 검증한다.</li>
+        </ul>
+    </div>
+
+    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
+
+    <section id="section-1">
+        <h2>1. 서론 (Introduction)</h2>
+        <p>
+            논문은 인공 지능의 핵심 목표를 "센서 입력으로부터 직접 다양한 환경과 과업에 걸쳐 기술을 습득하는 통합 학습 패러다임"으로 설정합니다.
+            이 목표를 위해 비전 기반 학습은 저렴한 카메라와 종단간 학습 가능성 덕분에 특히 적합합니다.
+            월드 모델은 환경에서 행동의 결과를 예측해 상상 공간에서 계획과 자기개선을 수행하게 해 주기 때문에, 특히 오프라인 설정에서 중요합니다.
+        </p>
+        <p>
+            저자들은 최근 각광받는 JEPA 계열 월드 모델이 개념적으로는 단순하지만, 예측 목표만 최적화하면 모든 입력을 거의 같은 잠재 표현으로 보내는 <strong>표현 붕괴</strong>가 쉽게 발생한다는 문제를 짚습니다.
+            지금까지는 EMA, stop-gradient, 다중 정규화, 사전학습 인코더, 보상/상태 보조 신호 등으로 이를 억제해 왔지만, 이런 장치들은 복잡성을 높이거나 안정성을 해칩니다.
+        </p>
+        <p>
+            LeWM의 핵심 제안은 "예측 가능성"과 "잠재 분포의 다양성"만으로 충분히 안정적인 종단간 JEPA를 만들 수 있다는 점입니다.
+            저자들은 조작, 내비게이션, 이동 과제를 아우르는 2D/3D 환경에서 LeWM을 평가했고, 잠재 표현이 단순 성능을 넘어 물리적 구조까지 반영하는지 함께 검증했습니다.
+        </p>
+
+        <div class="action-box">
+            <h4>저자들이 주장하는 핵심 기여</h4>
+            <ul>
+                <li>단일 GPU에서 학습 가능한 종단간 JEPA 월드 모델</li>
+                <li>아키텍처와 하이퍼파라미터에 강건한 두 항 목적식</li>
+                <li>기존 종단간 JEPA보다 우수하고 foundation 기반 모델과 경쟁 가능한 계획 성능</li>
+                <li>잠재 공간의 물리 이해를 프로빙과 기대 위반 평가로 계량화</li>
+            </ul>
+        </div>
+
+        <figure style="text-align: center; margin: 2rem 0;">
+            <img src="papers/2603.19312v1/figures/x2.png" alt="그림 2 - 잠재 월드 모델 접근법 비교" style="max-width: 100%; border-radius: 12px; box-shadow: var(--shadow-md);">
+            <figcaption>그림 2. 기존 잠재 월드 모델 계열의 위치. LeWM은 사전학습 인코더나 EMA 없이도 종단간, 보상 비의존, 픽셀 기반 학습을 달성한다.</figcaption>
+        </figure>
+    </section>
+
+    <section id="section-2">
+        <h2>2. 관련 연구 (Related Work)</h2>
+        <p>
+            관련 연구는 크게 두 축으로 정리됩니다. 첫째는 픽셀 공간에서 미래 관측을 직접 생성하는 생성형 월드 모델 계열입니다. IRIS, DIAMOND, DreamerV4 등은 게임 또는 로보틱스 환경을 시뮬레이터처럼 모사하며,
+            종종 보상 정보까지 함께 모델링합니다. 반면 이 논문은 보상이 없는 오프라인 관측 데이터만으로 태스크 불가지론적 월드 모델을 만드는 데 초점을 둡니다.
+        </p>
+        <p>
+            둘째는 JEPA 기반 표현 학습과 액션 조건부 월드 모델 계열입니다. I-JEPA, V-JEPA 같은 자기지도 모델은 주로 마스킹된 입력의 미래 임베딩을 예측하지만, 학습 안정성을 위해 EMA와 stop-gradient를 사용합니다.
+            액션 조건부 JEPA 계열은 사전학습 인코더를 고정하거나, PLDM처럼 다수의 정규화 항을 추가해 붕괴를 막습니다. 저자들은 LeWM이 이 두 갈래의 약점을 동시에 줄였다고 주장합니다.
+        </p>
+
+        <div class="table-grid">
+            <div class="table-card">
+                <div class="card-header">생성형 월드 모델</div>
+                <div class="card-body">
+                    <p><strong>장점</strong> 픽셀 공간의 풍부한 시뮬레이션이 가능하다.</p>
+                    <p><strong>한계</strong> 계산량이 크고, 보상 정보 또는 복잡한 학습 구성이 필요한 경우가 많다.</p>
+                </div>
+            </div>
+            <div class="table-card">
+                <div class="card-header">Foundation 기반 JEPA</div>
+                <div class="card-body">
+                    <p><strong>장점</strong> 사전학습 인코더를 고정해 붕괴 위험을 줄인다.</p>
+                    <p><strong>한계</strong> 종단간 학습이 아니므로 표현 공간이 사전학습 모델의 편향을 따른다.</p>
+                </div>
+            </div>
+            <div class="table-card">
+                <div class="card-header">기존 종단간 JEPA</div>
+                <div class="card-body">
+                    <p><strong>장점</strong> 픽셀에서 직접 표현과 동역학을 함께 학습한다.</p>
+                    <p><strong>한계</strong> PLDM처럼 다수의 손실 계수와 정교한 튜닝이 필요하고 학습이 불안정하다.</p>
+                </div>
+            </div>
+        </div>
+
+        <figure style="text-align: center; margin: 2rem 0;">
+            <img src="papers/2603.19312v1/figures/x3.png" alt="그림 3 - 고정 연산량 계획 속도와 성능" style="max-width: 100%; border-radius: 12px; box-shadow: var(--shadow-md);">
+            <figcaption>그림 3. DINO-WM보다 약 200배 적은 토큰 수를 다루는 덕분에 LeWM은 계획 속도에서 최대 48배 이점을 얻는다.</figcaption>
+        </figure>
+    </section>
+
+    <section id="section-3">
+        <h2>3. 방법: LeWorldModel</h2>
+        <p>
+            방법론은 두 부분으로 나뉩니다. 3.1절은 오프라인 데이터에서 잠재 월드 모델을 학습하는 방법, 3.2절은 학습된 모델을 잠재 공간 계획에 활용하는 방법입니다.
+        </p>
+
+        <h3>3.1 잠재 월드 모델 학습</h3>
+        <p>
+            LeWM은 완전 오프라인, 보상 비의존 설정을 가정합니다. 학습 데이터는 길이 <code>T</code>의 관측-행동 궤적 <code>(o1:T, a1:T)</code>이며, 정책의 최적성은 요구하지 않습니다.
+            중요한 것은 환경 동역학을 충분히 덮는 데이터입니다. 따라서 이 모델은 특정 태스크를 직접 최적화하기보다, 나중에 다양한 태스크에 제어 또는 적응될 수 있는 표현을 학습합니다.
+        </p>
+        <p>
+            모델은 <strong>인코더</strong>와 <strong>예측기</strong>로 구성됩니다. 인코더는 각 프레임을 저차원 잠재 임베딩 <code>zt</code>로 매핑하고,
+            예측기는 현재 잠재 상태와 행동을 입력받아 다음 잠재 상태 <code>z(t+1)</code>를 자기회귀적으로 예측합니다. 인코더는 ViT-Tiny 기반이며, [CLS] 토큰 뒤에 BatchNorm이 포함된 1층 MLP 투영기를 둡니다.
+            예측기는 6층 transformer이며, AdaLN으로 행동을 주입합니다.
+        </p>
+        <p>
+            저자들이 강조하는 설계 포인트는 마지막 ViT 층의 LayerNorm 때문에 anti-collapse 목적이 잘 작동하지 않을 수 있어, [CLS] 임베딩을 별도 투영 공간으로 옮긴 점입니다.
+            또 AdaLN 파라미터를 0으로 초기화해 행동 조건화의 영향이 점진적으로 커지도록 만들어 학습 초반 안정성을 높였습니다.
+        </p>
+
+        <div class="info-box">
+            <p><strong>LeWM 목적식</strong></p>
+            <p>예측 손실: 다음 임베딩 예측 오차 <code>Lpred = ||z^(t+1) - z(t+1)||²</code></p>
+            <p>SIGReg: 잠재 임베딩 분포가 등방성 가우시안과 맞아가도록 유도하는 정규화 항</p>
+            <p>최종 손실: <code>LLeWM = Lpred + λ · SIGReg(Z)</code></p>
+        </div>
+
+        <p>
+            이 논문의 가장 중요한 차별점은 붕괴 방지에 쓰는 정규화기를 <strong>SIGReg 하나</strong>로 단순화했다는 점입니다.
+            SIGReg는 고차원 정규성 검정이 어렵다는 문제를 우회하기 위해, 잠재 벡터를 여러 무작위 단위 방향으로 1차원 사영한 뒤 각 사영에 대해 Epps-Pulley 통계량을 계산합니다.
+            크라메르-볼트 정리에 따르면 모든 1차원 주변분포가 맞으면 결합분포도 맞으므로, 이 방식으로 전체 잠재 분포를 등방성 가우시안으로 끌어갈 수 있습니다.
+        </p>
+        <p>
+            실전에서는 투영 수 <code>M=1024</code>, 정규화 계수 <code>λ=0.1</code>을 사용합니다. 이후 실험에서 <code>M</code>은 민감하지 않고 <code>λ</code>만 사실상 튜닝하면 된다고 보고합니다.
+            따라서 기존 PLDM의 다차원 격자 탐색과 달리, LeWM은 이분 탐색에 가까운 로그 복잡도로 하이퍼파라미터를 찾을 수 있습니다.
+        </p>
+
+        <figure style="text-align: center; margin: 2rem 0;">
+            <img src="papers/2603.19312v1/figures/x1.png" alt="그림 1 - LeWorldModel 학습 파이프라인" style="max-width: 100%; border-radius: 12px; box-shadow: var(--shadow-md);">
+            <figcaption>그림 1. 프레임을 잠재 임베딩으로 인코딩하고, 예측기가 다음 잠재 상태를 맞추며, SIGReg가 잠재 분포의 다양성과 비붕괴를 보장하는 LeWM 학습 파이프라인.</figcaption>
+        </figure>
+
+        <div class="qa-item">
+            <p><strong>알고리즘 5 요약</strong></p>
+            <p>픽셀 관측을 인코딩한 뒤, 예측기가 행동 조건부로 다음 임베딩을 맞추고, 각 시점 잠재 표현에 step-wise SIGReg를 적용한다. 모든 항에 대해 기울기를 끊지 않고 종단간으로 공동 최적화한다.</p>
+        </div>
+
+        <h3>3.2 잠재 계획 (Latent Planning)</h3>
+        <p>
+            추론 시에는 관측 <code>o1</code>와 목표 관측 <code>og</code>를 인코딩해 각각 <code>z1</code>, <code>zg</code>를 얻고, 잠재 공간에서 행동 시퀀스를 최적화합니다.
+            계획 비용은 종말 시점 잠재 상태와 목표 잠재 상태 사이의 L2 거리입니다. 즉, 모델은 "어떤 행동 시퀀스가 목표에 가장 가까운 잠재 상태를 만들 것인가"를 묻습니다.
+        </p>
+        <p>
+            이 최적화는 CEM으로 풉니다. 각 반복에서 다수의 후보 행동 시퀀스를 샘플링하고, 월드 모델로 롤아웃해 비용을 계산한 뒤, 상위 elite 시퀀스로 다음 샘플링 분포를 갱신합니다.
+            다만 오토리그레시브 롤아웃은 지평선이 길어질수록 오차가 누적되므로, 저자들은 <strong>MPC 방식</strong>을 사용해 전체 계획 중 앞쪽 일부 행동만 실행한 뒤 최신 관측에서 다시 계획합니다.
+        </p>
+
+        <figure style="text-align: center; margin: 2rem 0;">
+            <img src="papers/2603.19312v1/figures/x4.png" alt="그림 4 - 잠재 계획" style="max-width: 100%; border-radius: 12px; box-shadow: var(--shadow-md);">
+            <figcaption>그림 4. 초기 관측과 목표 관측을 잠재 공간으로 옮긴 뒤, 예측기 롤아웃과 목표 매칭 비용을 이용해 행동 시퀀스를 반복 최적화하는 잠재 계획 과정.</figcaption>
+        </figure>
+    </section>
+
+    <section id="section-4">
+        <h2>4. 잠재 계획 성능 (Latent Planning Performance)</h2>
+
+        <h3>4.1 평가 설정</h3>
+        <p>
+            평가는 Push-T, OGBench-Cube, TwoRoom, Reacher의 네 환경에서 수행됩니다. 모두 연속 행동 공간을 가지며, 내비게이션, 2D/3D 조작, 모션 플래닝을 고르게 포함합니다.
+            비교 대상은 DINO-WM, PLDM, 목표 조건부 행동복제(GCBC), 목표 조건부 오프라인 강화학습(GCIQL, GCIVL)입니다.
+        </p>
+        <p>
+            이 중 PLDM은 종단간 픽셀 학습이라는 점에서 가장 가까운 비교군이지만, 7개 항의 목적식을 사용합니다.
+            DINO-WM은 DINOv2를 고정 인코더로 써 붕괴를 피하나, 본문 평가에서는 공정 비교를 위해 고유수용감각 입력을 제외했습니다.
+        </p>
+
+        <figure style="text-align: center; margin: 2rem 0;">
+            <img src="papers/2603.19312v1/figures/x6.png" alt="그림 5 - 평가 환경" style="max-width: 100%; border-radius: 12px; box-shadow: var(--shadow-md);">
+            <figcaption>그림 5. 평가 환경. Push-T, OGBench-Cube, TwoRoom, Reacher는 모두 시각 기반 연속 제어 문제이며, LeWM의 일반성을 시험한다.</figcaption>
+        </figure>
+
+        <h3>4.2 효율적인 계획으로의 진전</h3>
+        <p>
+            본문 결과에서 LeWM은 특히 어려운 계획 과제에서 두드러졌습니다. Push-T에서는 PLDM보다 성공률이 18% 높았고, DINO-WM과도 경쟁했습니다.
+            특히 픽셀만 사용하는 LeWM이, 추가 proprioceptive 입력을 쓴 DINO-WM보다 Push-T에서 앞선다는 점은 LeWM 잠재 공간이 과제 관련 물리량을 충분히 담고 있음을 시사합니다.
+        </p>
+        <p>
+            속도 측면에서는 토큰 수가 훨씬 적어 계획 시간이 크게 줄어듭니다. 논문은 <strong>완전한 계획이 1초 미만</strong>에 끝나며, DINO-WM보다 최대 48배 빠르다고 보고합니다.
+            이는 실시간 제어와의 간극을 실질적으로 좁히는 결과입니다. 다만 가장 단순한 TwoRoom에서는 오히려 성능이 낮았고, 저자들은 저복잡도 환경에서 고차원 가우시안 prior를 강제하는 SIGReg의 한계 가능성을 제시합니다.
+        </p>
+
+        <figure style="text-align: center; margin: 2rem 0;">
+            <img src="papers/2603.19312v1/figures/x7.png" alt="그림 6 - 환경별 계획 성능" style="max-width: 100%; border-radius: 12px; box-shadow: var(--shadow-md);">
+            <figcaption>그림 6. Push-T와 Reacher에서 LeWM이 가장 안정적인 상위권 성능을 보이며, OGBench-Cube에서는 DINO-WM과 근접하고, TwoRoom에서는 단순 환경 특성상 약점을 드러낸다.</figcaption>
+        </figure>
+
+        <h3>4.3 안정적인 학습으로의 진전</h3>
+        <p>
+            저자들은 SIGReg 내부 파라미터(무작위 사영 수, 적분 노드 수)와 임베딩 차원, 인코더 아키텍처, 드롭아웃, 디코더 추가 여부를 모두 ablation 합니다.
+            결론은 분명합니다. 성능은 대부분의 선택에 민감하지 않으며, 사실상 <code>λ</code> 하나만 조율하면 됩니다.
+            이는 튜닝 난도가 매우 높은 PLDM과 대비됩니다.
+        </p>
+        <p>
+            학습 곡선 역시 LeWM 쪽이 해석하기 쉽습니다. 예측 손실은 매끄럽게 감소하고 SIGReg는 초반에 빠르게 떨어진 뒤 안정적으로 평탄화됩니다.
+            반면 PLDM의 여러 손실 항은 노이즈가 심하고 비단조적이어서, 어느 항이 성능을 망치는지 추적하기 어렵습니다.
+        </p>
+
+        <div class="table-grid">
+            <div class="table-card">
+                <div class="card-header">표 5. 학습 분산</div>
+                <div class="card-body">
+                    <p><strong>DINO-WM</strong> 92.0 ± 1.63</p>
+                    <p><strong>PLDM</strong> 78.0 ± 5.0</p>
+                    <p><strong>LeWM</strong> 96.0 ± 2.83</p>
+                </div>
+            </div>
+            <div class="table-card">
+                <div class="card-header">표 6. 예측기 크기</div>
+                <div class="card-body">
+                    <p><strong>tiny</strong> 80.67 ± 6.54</p>
+                    <p><strong>small (ViT-S)</strong> 96.0 ± 2.83</p>
+                    <p><strong>base</strong> 86.7 ± 3.06</p>
+                </div>
+            </div>
+            <div class="table-card">
+                <div class="card-header">표 7-9. 추가 ablation</div>
+                <div class="card-body">
+                    <p><strong>디코더 손실 추가</strong> 성능 하락(96.0 → 86.0)</p>
+                    <p><strong>ResNet-18 인코더</strong> 경쟁력 있으나 ViT가 약간 우세(94.0 vs 96.0)</p>
+                    <p><strong>드롭아웃</strong> 0.1이 최적, 과도한 드롭아웃은 성능 저하</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="section-5">
+        <h2>5. LeWM의 물리 이해 계량화</h2>
+
+        <h3>5.1 잠재 공간의 물리 구조</h3>
+        <p>
+            저자들은 "LeWM의 잠재 공간이 실제 물리 상태를 얼마나 잘 담는가"를 보기 위해 프로빙을 수행합니다.
+            주어진 잠재 임베딩에서 선형/비선형 예측기를 학습해 에이전트 위치, 블록 위치, 블록 각도 같은 물리량을 복원하고 MSE와 상관계수로 측정합니다.
+        </p>
+        <p>
+            Push-T 결과(표 1)에서 LeWM은 대부분 항목에서 PLDM을 앞서고, DINO-WM과도 경쟁했습니다.
+            블록 위치처럼 제어에 중요한 위치 정보는 매우 잘 복원되었지만, 각도나 회전 정보는 DINO-WM이 여전히 우세한 면이 있습니다.
+            이는 대규모 사전학습 시각 표현이 회전·동역학 관련 미세 시각 단서를 더 잘 품고 있을 가능성을 시사합니다.
+        </p>
+
+        <div class="table-grid">
+            <div class="table-card">
+                <div class="card-header">표 1. Push-T 프로빙 요약</div>
+                <div class="card-body">
+                    <p><strong>에이전트 위치</strong> LeWM은 선형 probe MSE 0.052, MLP probe MSE 0.004로 매우 우수하다.</p>
+                    <p><strong>블록 위치</strong> LeWM이 MLP probe에서 최상위권(0.001)을 기록한다.</p>
+                    <p><strong>블록 각도</strong> DINO-WM이 가장 강하지만 LeWM도 PLDM보다 낫다.</p>
+                </div>
+            </div>
+            <div class="table-card">
+                <div class="card-header">표 3. TwoRoom 프로빙</div>
+                <div class="card-body">
+                    <p>다운스트림 계획 성능은 떨어졌지만, 에이전트 위치 프로빙에서는 PLDM과 대등하거나 더 낫다.</p>
+                    <p>즉, 문제는 표현 정보량보다 계획 또는 동역학 모델링 쪽에 있을 가능성이 크다.</p>
+                </div>
+            </div>
+            <div class="table-card">
+                <div class="card-header">표 4. OGBench-Cube 프로빙</div>
+                <div class="card-body">
+                    <p>LeWM은 블록/엔드이펙터 위치 같은 위치량에서 강하고, 회전량은 세 방법 모두 어려움을 겪는다.</p>
+                    <p>DINO-WM은 joint velocity, yaw 등 동역학·회전 성분에서 우세하다.</p>
+                </div>
+            </div>
+        </div>
+
+        <figure style="text-align: center; margin: 2rem 0;">
+            <img src="papers/2603.19312v1/figures/x9.png" alt="그림 7 - predictor rollouts" style="max-width: 100%; border-radius: 12px; box-shadow: var(--shadow-md);">
+            <figcaption>그림 7. LeWM이 생성한 잠재 롤아웃은 실제 관측의 전체 장면 구조와 주요 동역학을 잘 따른다. 다만 OGBench-Cube의 엔드이펙터 각도 같은 미세 정보는 일부 놓친다.</figcaption>
+        </figure>
+
+        <figure style="text-align: center; margin: 2rem 0;">
+            <img src="papers/2603.19312v1/figures/x10.png" alt="그림 8 - 디코더 시각화" style="max-width: 100%; border-radius: 12px; box-shadow: var(--shadow-md);">
+            <figcaption>그림 8. 재구성 손실 없이도 잠재 표현이 시간이 갈수록 시각 장면 복원에 필요한 정보를 품게 된다.</figcaption>
+        </figure>
+
+        <figure style="text-align: center; margin: 2rem 0;">
+            <img src="papers/2603.19312v1/figures/x11.png" alt="그림 9 - 잠재 공간 시각화" style="max-width: 100%; border-radius: 12px; box-shadow: var(--shadow-md);">
+            <figcaption>그림 9. Push-T에서 잠재 공간은 실제 상태 공간의 근접성과 상대 위치를 어느 정도 보존한다.</figcaption>
+        </figure>
+
+        <p>
+            추가로 저자들은 학습 중 latent straightening 현상을 관찰합니다. 연속하는 잠재 속도 벡터의 코사인 유사도를 측정한 결과, LeWM은 별도 시간 매끄러움 항이 없음에도
+            PLDM보다 더 곧은 잠재 궤적을 형성했습니다. 이는 SIGReg가 시간축을 직접 규제하지 않더라도, 결과적으로 하위 과제에 유리한 잠재 기하 구조를 유도할 수 있음을 보여줍니다.
+        </p>
+
+        <h3>5.2 기대 위반(VoE) 프레임워크</h3>
+        <p>
+            두 번째 물리 이해 평가는 기대 위반(VoE)입니다. 개발심리학에서 착안한 이 프레임워크는, 모델이 학습한 물리 규칙과 어긋나는 사건에 더 높은 놀람을 주는지 확인합니다.
+            측정값은 모델의 미래 예측과 실제 미래 관측 사이의 불일치입니다.
+        </p>
+        <p>
+            각 환경에서 세 가지 궤적을 만듭니다. (1) 변형 없는 기준 궤적, (2) 물체 색이 갑자기 바뀌는 시각 교란, (3) 물체 또는 에이전트를 임의 위치로 순간이동시키는 물리 교란입니다.
+            결과적으로 LeWM은 세 환경 모두에서 물리 교란에 대해 가장 뚜렷한 surprise spike를 보였고, 단순 색 변화보다 물리 연속성 붕괴에 더 민감했습니다.
+        </p>
+
+        <figure style="text-align: center; margin: 2rem 0;">
+            <img src="papers/2603.19312v1/figures/x12.png" alt="그림 10 - 기대 위반 평가" style="max-width: 100%; border-radius: 12px; box-shadow: var(--shadow-md);">
+            <figcaption>그림 10. LeWM은 시각 교란보다 물리적 순간이동 교란에서 더 강한 놀람 신호를 낸다. 이는 잠재 공간이 물리 연속성을 학습했음을 시사한다.</figcaption>
+        </figure>
+    </section>
+
+    <section id="section-6">
+        <h2>6. 결론 (Conclusion)</h2>
+        <p>
+            LeWM은 복잡한 보조 장치 없이도, 원시 픽셀에서 종단간으로 안정적인 JEPA 월드 모델을 학습할 수 있음을 보여줍니다.
+            핵심은 예측 손실과 SIGReg의 조합이며, 이 간결한 설계가 높은 학습 안정성, 낮은 튜닝 비용, 빠른 계획 속도라는 실질적 이점으로 이어졌습니다.
+        </p>
+        <p>
+            결과적으로 LeWM은 foundation 기반 모델보다 훨씬 가볍고 빠르면서도 경쟁력 있는 계획 성능을 제공하고, 잠재 표현 차원에서는 물리 상태 구조와 비물리 사건 감지 능력까지 보여주었습니다.
+            다만 단순 환경에서의 약점, 회전량 표현의 한계, 더 어려운 3D 장면에서 사전학습 표현의 이점은 앞으로 보완해야 할 지점으로 남습니다.
+        </p>
+    </section>
+
+    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
+
+    <section id="appendices">
+        <h2>부록 번역 및 보충 정리</h2>
+
+        <h3>부록 A. SIGReg</h3>
+        <p>
+            SIGReg는 잠재 임베딩 분포를 등방성 가우시안에 맞추기 위한 정규화기입니다.
+            여러 무작위 방향으로 잠재 벡터를 사영한 뒤, 각 1차원 사영에 대해 Epps-Pulley 정규성 통계량을 계산해 평균합니다.
+            크라메르-볼트 정리에 의해 모든 1차원 주변분포가 표준 정규와 일치하면 전체 결합분포 역시 가우시안에 가까워집니다.
+        </p>
+
+        <h3>부록 B. 교차 엔트로피 방법 (CEM)</h3>
+        <p>
+            CEM은 샘플 기반 영차 최적화 알고리즘입니다. 각 반복에서 행동 시퀀스를 가우시안 분포에서 샘플링하고, 비용이 낮은 상위 elite 시퀀스로 평균과 공분산을 갱신합니다.
+            이 논문에서는 반복마다 300개의 행동 시퀀스를 샘플링하고, 상위 30개 elite를 사용합니다.
+            다만 비볼록 문제에서 전역 최적해 보장은 없고, 행동 차원이 커질수록 어려워진다는 한계도 명시합니다.
+        </p>
+
+        <h3>부록 C. 베이스라인</h3>
+        <h3>C.1 DINO-WM</h3>
+        <div class="qa-item">
+            <p><strong>DINO-WM</strong></p>
+            <p>고정된 DINOv2 표현 위에서 다음 임베딩 예측기만 학습한다. 붕괴는 피하지만 종단간 학습은 아니다.</p>
+        </div>
+        <h3>C.2 PLDM</h3>
+        <div class="qa-item">
+            <p><strong>PLDM</strong></p>
+            <p>예측 손실에 VICReg 기반 분산/공분산/시간 정규화와 IDM까지 더한 7항 목적식을 사용한다. 따라서 성능과 안정성이 손실 계수 조합에 크게 좌우된다.</p>
+        </div>
+        <h3>C.3 GC-RL</h3>
+        <div class="qa-item">
+            <p><strong>GC-RL</strong></p>
+            <p>목표 조건부 IQL/IVL을 오프라인 설정에서 사용한다. 관측과 목표는 DINOv2 임베딩으로 인코딩하고, value 또는 Q-function을 학습한 뒤 advantage-weighted regression으로 정책을 뽑는다.</p>
+        </div>
+        <h3>C.4 GCBC</h3>
+        <div class="qa-item">
+            <p><strong>GCBC</strong></p>
+            <p>관측과 목표 임베딩을 입력받아 행동을 직접 모방하는 단순 목표 조건부 행동복제 기준선이다.</p>
+        </div>
+
+        <div class="table-grid">
+            <div class="table-card">
+                <div class="card-header">표 2. PLDM 최적 계수</div>
+                <div class="card-body">
+                    <p><strong>α</strong> 18.0</p>
+                    <p><strong>β</strong> 12</p>
+                    <p><strong>γ</strong> 0.2</p>
+                    <p><strong>ζ</strong> 0.7</p>
+                    <p><strong>ν</strong> 0.0</p>
+                    <p><strong>μ</strong> 0.0</p>
+                </div>
+            </div>
+        </div>
+
+        <h3>부록 D. 구현 세부사항</h3>
+        <p>
+            프레임 스킵은 5이며, 각 프레임 사이 행동 다섯 개를 하나의 블록으로 묶습니다. 배치 크기는 128, 서브트래젝터리 길이는 4, 입력 해상도는 224×224입니다.
+            인코더는 Hugging Face의 ViT-Tiny(패치 크기 14), 예측기는 ViT-S backbone을 사용합니다. Push-T와 OGBench-Cube에서는 history 길이 3, TwoRoom에서는 1을 사용합니다.
+        </p>
+        <p>
+            계획기는 horizon 5, CEM 후보 300개, Push-T에서는 30회 반복, 나머지 환경에서는 10회 반복을 씁니다.
+            상위 30개 trajectory로 분포를 갱신하며, 프레임 스킵 5 때문에 계획 horizon 5는 실제 환경 시간축 25 스텝에 해당합니다.
+            모든 학습과 계획은 단일 NVIDIA L40S GPU에서 수행됐습니다.
+        </p>
+
+        <h3>부록 E. 환경 및 데이터셋</h3>
+        <ul class="insight-list">
+            <li><strong>TwoRoom</strong>: 두 방과 하나의 문이 있는 2D 내비게이션. 10,000 에피소드, 평균 92스텝, 10에폭 학습.</li>
+            <li><strong>Push-T</strong>: T자 블록을 목표 배치로 밀어 넣는 2D 조작. 20,000 expert 에피소드, 평균 196스텝, 10에폭 학습.</li>
+            <li><strong>OGBench-Cube</strong>: 로봇 팔로 큐브를 집어 목표 위치에 두는 3D 조작. 10,000 에피소드, 각 200스텝.</li>
+            <li><strong>Reacher</strong>: 2관절 팔이 목표 위치를 향하는 DeepMind Control Suite 환경. 10,000 에피소드, 각 200스텝.</li>
+        </ul>
+
+        <h3>부록 F. 평가 세부사항</h3>
+        <h3>F.1 Control</h3>
+        <p>
+            F.1에서는 환경별 평가 budget과 goal sampling 간격을 명시합니다. TwoRoom은 150스텝 budget과 미래 100스텝 목표를 쓰고,
+            Push-T, OGBench-Cube, Reacher는 모두 50스텝 budget과 미래 25스텝 목표를 사용합니다.
+        </p>
+        <h3>F.2 Probing</h3>
+        <p>
+            환경별 프로빙 대상은 다음과 같습니다. TwoRoom은 에이전트 위치, Push-T는 에이전트/블록 상태, OGBench-Cube는 큐브 위치와 엔드이펙터 상태를 예측합니다.
+            선형 probe는 정보의 선형 접근 가능성을, MLP probe는 얽혀 있지만 존재하는 정보까지 평가합니다.
+        </p>
+        <h3>F.3 Violation-of-expectation</h3>
+        <p>
+            기대 위반 평가는 각 환경에서 정상 궤적, 시각 교란 궤적, 물리 교란 궤적을 따로 구성합니다.
+            TwoRoom에서는 에이전트 색 변경과 순간이동, Push-T에서는 블록 색 변경과 에이전트+블록 순간이동, OGBench-Cube에서는 큐브 색 변경과 큐브 순간이동을 사용합니다.
+            이 비교를 통해 LeWM과 베이스라인이 물리 연속성 붕괴에 얼마나 민감한지 측정합니다.
+        </p>
+        <ul class="insight-list">
+            <li><strong>그림 11</strong> 추가 롤아웃: Push-T와 OGBench-Cube에서 LeWM 롤아웃이 실제 궤적을 대체로 잘 따른다.</li>
+            <li><strong>그림 12</strong> VoE 샘플 궤적: 정상, 색상 교란, 순간이동 교란이 어떻게 만들어지는지 예시를 제공한다.</li>
+            <li><strong>그림 13-14</strong> PLDM과 DINO-WM의 VoE: 두 모델 모두 단순 환경에서는 교란을 감지하지만 OGBench-Cube에서는 일관성이 떨어진다.</li>
+        </ul>
+
+        <h3>부록 G. Ablation</h3>
+        <p>
+            임베딩 차원은 일정 임계값 이하에서만 성능 저하가 크고, 그 이상에서는 빠르게 포화됩니다. SIGReg 사영 수와 적분 노드 수는 성능에 거의 영향을 주지 않습니다.
+            정규화 계수 <code>λ</code>는 0.01~0.2 범위에서 80% 이상의 높은 성공률을 유지하며, 0.09 근방이 가장 좋았습니다.
+        </p>
+        <ul class="insight-list">
+            <li><strong>그림 15</strong> 임베딩 차원, 사영 수, 적분 노드 수 모두 넓은 구간에서 안정적이다.</li>
+            <li><strong>그림 16</strong> λ가 지나치게 커지지 않는 한 성능이 견고하다.</li>
+        </ul>
+
+        <h3>부록 H. 시간적 잠재 경로 직선화</h3>
+        <p>
+            연속 시점 잠재 속도 벡터 사이의 평균 코사인 유사도를 직선화 척도로 정의합니다.
+            값이 1에 가까울수록 잠재 궤적이 직선에 가깝다는 뜻입니다. LeWM은 이를 직접 강제하지 않음에도 학습이 진행될수록 더 높은 직선화를 보였고,
+            PLDM보다도 더 곧은 잠재 궤적을 형성했습니다.
+        </p>
+
+        <h3>부록 I. 학습 곡선</h3>
+        <p>
+            그림 18과 19는 각각 LeWM과 PLDM의 Push-T 학습 곡선을 보여줍니다.
+            LeWM은 예측 손실과 정규화 손실 두 항만으로 이루어져 해석이 단순하고 수렴 양상이 안정적입니다.
+            반면 PLDM은 다수의 정규화 항이 서로 다른 스케일과 잡음을 보여 분석이 어렵습니다.
+        </p>
+
+        <h3>참고문헌 메모</h3>
+        <p>
+            원문 참고문헌은 split view에서 전체 목록을 바로 대조할 수 있도록 유지했습니다. 번역본에서는 본문 이해에 직접 연결되는 핵심 계열만 정리했습니다:
+            JEPA(I-JEPA, V-JEPA), SIGReg, Dreamer/IRIS 계열 월드 모델, DINOv2, PLDM, IQL/IVL, Goal-conditioned BC.
+        </p>
+    </section>
+</div>

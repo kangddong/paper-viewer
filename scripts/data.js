@@ -19,6 +19,15 @@ const APP_DATA = {
       date: "2026-03-16",
       abstract: "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and...",
       originalUrl: "https://arxiv.org/html/1706.03762v7"
+    },
+  
+    {
+      id: "2603.19312v1",
+      title: "LeWorldModel: Stable End-to-End Joint-Embedding Predictive Architecture from Pixels",
+      authors: "Lucas Maes* Quentin Le Lidec* Damien Scieur1, Yann LeCun2 Randall Balestriero4 1Mila, Université de Montréal 2New York University 3Samsung SAIL 4Brown University",
+      date: "2026-03-25",
+      abstract: "Joint Embedding Predictive Architectures (JEPAs) offer a compelling framework for learning world models in compact latent spaces, yet existing methods remain fragile, relying on complex multi-term los...",
+      originalUrl: "https://arxiv.org/html/2603.19312v1"
     }
   ]
 };

@@ -46,3 +46,22 @@
 | **Positional Encoding** | 위치 인코딩 | 시퀀스 내 단어의 순서 정보를 제공하는 기법 |
 | **Feed-forward** | 피드포워드 / 순전파 | 데이터가 한 방향으로만 흐르는 신경망 구조 |
 | **State-of-the-Art (SOTA)** | 최첨단 / SOTA | 현재 가장 우수한 성능을 보이는 기술 수준 |
+| **World Model (WM)** | 월드 모델 | 환경 동역학을 예측하는 모델 |
+| **Joint Embedding Predictive Architecture (JEPA)** | 공동 임베딩 예측 아키텍처 / JEPA | 압축된 잠재 공간에서 미래 임베딩을 예측 |
+| **Joint-Embedding** | 공동 임베딩 | 입력과 예측 대상을 같은 잠재 표현 공간에 사상 |
+| **Latent Space / Latent Embedding** | 잠재 공간 / 잠재 임베딩 | 저차원 표현 공간 |
+| **Predictor** | 예측기 | 다음 잠재 상태를 예측하는 모듈 |
+| **Representation Collapse** | 표현 붕괴 | 서로 다른 입력이 거의 동일한 표현으로 수렴하는 현상 |
+| **Stop-Gradient** | 기울기 차단 | 역전파를 일부 경로에서 막는 기법 |
+| **Exponential Moving Average (EMA)** | 지수이동평균 | 타깃 네트워크 안정화 기법 |
+| **Teacher Forcing** | 티처 포싱 | 정답 이전 상태를 다음 예측 입력으로 사용하는 학습 방식 |
+| **Model Predictive Control (MPC)** | 모델 예측 제어 | 계획과 재계획을 반복하는 제어 전략 |
+| **Cross-Entropy Method (CEM)** | 교차 엔트로피 방법 | 샘플 기반 최적화 기법 |
+| **SIGReg** | SIGReg | 등방성 가우시안 잠재 분포를 유도하는 정규화기 |
+| **Epps-Pulley Test** | Epps-Pulley 검정 | 정규성 검정을 위한 통계량 |
+| **Cramér-Wold theorem** | 크라메르-볼트 정리 | 모든 1차원 사영이 같으면 결합분포도 같다는 정리 |
+| **Violation of Expectation (VoE)** | 기대 위반 평가 | 물리 법칙 위반 상황에서 놀람(surprise)을 측정 |
+| **Probing** | 프로빙 | 잠재 표현에 담긴 정보를 별도 예측기로 측정 |
+| **Rollout** | 롤아웃 | 모델을 반복 적용해 미래 상태를 전개하는 과정 |
+| **Task-agnostic** | 태스크 불가지론적 | 특정 과업에 종속되지 않는 |
+| **Reward-free** | 보상 비의존 / 보상 없는 | 보상 신호 없이 학습하는 설정 |
