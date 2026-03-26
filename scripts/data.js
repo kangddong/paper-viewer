@@ -28,6 +28,15 @@ const APP_DATA = {
       date: "2026-03-25",
       abstract: "Joint Embedding Predictive Architectures (JEPAs) offer a compelling framework for learning world models in compact latent spaces, yet existing methods remain fragile, relying on complex multi-term los...",
       originalUrl: "https://arxiv.org/html/2603.19312v1"
+    },
+  
+    {
+      id: "2504.19874",
+      title: "TurboQuant: Online Vector Quantization with Near-optimal Distortion Rate",
+      authors: "Amir Zandieh Majid Daliri New York University Majid Hadian Google DeepMind Vahab Mirrokni",
+      date: "2026-03-26",
+      abstract: "Vector quantization, a problem rooted in Shannon’s source coding theory, aims to quantize high-dimensional Euclidean vectors while minimizing distortion in their geometric structure. We propose TurboQ...",
+      originalUrl: "https://arxiv.org/html/2504.19874"
     }
   ]
 };
