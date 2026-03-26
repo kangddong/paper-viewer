@@ -5,14 +5,14 @@
 
 ## 🔄 워크플로우 (Workflow)
 1. **분석 (Analyze)**: `orig.html`에서 섹션, 부록, 표, 그림 구조를 추출한다.
-2. **작업 (Translate)**: `words.md`를 기준으로 용어를 통일하며 본문을 번역한다.
+2. **작업 (Translate)**: `docs/translation/words.md`를 기준으로 용어를 통일하며 본문을 번역한다.
 3. **통합 (Integrate)**: 번역 내용을 `ko.html`에 재배치하고 주요 시각 자료를 포함한다.
 4. **검증 (Verify)**: 섹션 누락, 그림/표 캡션, 이미지 경로, UI 렌더링을 확인한다.
 
 ## 📝 To-do Checklist
 
 ### [Phase 1] 초기 분석 및 준비
-- [x] 용어집(`words.md`) 보강
+- [x] 용어집(`docs/translation/words.md`) 보강
 - [x] 제목, 저자, 초록 확인
 - [x] 전체 섹션/부록 구조 추출
 

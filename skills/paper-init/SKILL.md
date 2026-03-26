@@ -27,7 +27,7 @@ description: arXiv 논문 ID를 받아 수집 및 번역 환경 구축을 자동
     - `meta.json`: 논문 메타데이터
     - `ko.html`: 번역용 템플릿
     - `figures/`: 추출된 이미지 폴더
-4.  **후속 작업**: 생성된 `ko.html`을 열고 번역 작업을 시작합니다.
+4.  **후속 작업**: 생성된 `ko.html`을 열고 `docs/translation/TRANSLATION_PLAN_TEMPLATE.md`, `docs/translation/words.md`를 기준으로 번역 작업을 시작합니다.
 
 ## ⚠️ 주의 사항
 - arXiv HTML 서비스가 지원되지 않는 논문의 경우 수집이 실패할 수 있습니다.

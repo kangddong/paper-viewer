@@ -5,14 +5,14 @@
 
 ## 🔄 워크플로우 (Workflow)
 1. **분석 (Analyze)**: `orig.html`에서 번역할 섹션의 전체 텍스트와 구조(Table, Figure, List) 추출.
-2. **작업 (Translate)**: `words.md`를 참조하여 섹션별 상세 번역 수행.
+2. **작업 (Translate)**: `docs/translation/words.md`를 참조하여 섹션별 상세 번역 수행.
 3. **통합 (Integrate)**: 번역된 내용을 `ko.html`의 해당 위치에 삽입 및 스타일 유지.
 4. **검증 (Verify)**: 원문과 대조하여 누락 여부 및 용어 통일성 체크.
 
 ## 📝 To-do Checklist
 
 ### [Phase 1] 기초 섹션 보강 (Executive Summary)
-- [x] 용어집(`words.md`) 보강
+- [x] 용어집(`docs/translation/words.md`) 보강
 - [x] **Executive Summary (5)~(7)** 상세 내용 보강 (현재 요약 수준임)
   - (5) Addressing Core Bottlenecks
   - (6) AI and HW in Action
