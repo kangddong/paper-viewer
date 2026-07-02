@@ -6,6 +6,14 @@
 | :--- | :--- | :--- |
 | **Co-design / Co-evolution** | 공동 설계 / 공진화 | 하드웨어와 소프트웨어가 함께 발전함 |
 | **Memory Wall** | 메모리 벽 | 연산 속도에 비해 메모리 대역폭이 뒤처지는 현상 |
+| **High Bandwidth Memory (HBM)** | 고대역폭 메모리 / HBM | GPU·AI 가속기에 사용되는 적층형 고대역폭 메모리 |
+| **DRAM (Dynamic Random-Access Memory)** | DRAM / 동적 랜덤 액세스 메모리 | 메인 메모리 및 그래픽 메모리의 기반이 되는 휘발성 메모리 |
+| **LPDDR (Low-Power Double Data Rate)** | LPDDR / 저전력 DDR | 모바일·저전력 AI 시스템에 쓰이는 저전력 DRAM 계열 |
+| **Memory Bandwidth** | 메모리 대역폭 | 단위 시간당 메모리와 연산 장치 사이를 오가는 데이터 양 |
+| **Memory Hierarchy** | 메모리 계층 구조 | 레지스터, 캐시, DRAM, 스토리지 등 속도와 용량이 다른 메모리 계층 |
+| **Processing-in-Memory (PIM)** | 메모리 내 처리 / PIM | 메모리 근처 또는 내부에서 연산을 수행해 데이터 이동을 줄이는 방식 |
+| **Near-Memory Computing** | 니어 메모리 컴퓨팅 | 메모리 가까이에 연산 유닛을 배치해 대역폭과 지연 시간을 개선하는 구조 |
+| **CXL (Compute Express Link)** | CXL (Compute Express Link) | CPU·가속기·메모리 장치 사이의 고속 일관성 인터커넥트 |
 | **Intelligence per Joule** | 줄(Joule)당 지능 | 에너지 효율성을 강조하는 지표 |
 | **Monolithic Integration** | 단일 통합 | 반도체 소자들을 하나의 칩 위에 적층하는 기술 |
 | **Compute-in-Memory (CIM)** | 메모리 내 연산 | 데이터를 옮기지 않고 메모리 자체에서 연산 수행 |
