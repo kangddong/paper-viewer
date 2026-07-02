@@ -1,5 +1,5 @@
 // scripts/data.js
-// 논문 데이터 리스트 (개발 환경용 mock data)
+// Legacy static seed. Runtime rendering now reads from Supabase public.papers.
 
 const APP_DATA = {
   papers: [

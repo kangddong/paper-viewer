@@ -240,36 +240,9 @@ def init_paper(url):
     print(f"[*] Created skeleton ko.html")
 
 
-    # 8. Update scripts/data.js (Robust update)
-    print(f"[*] Updating scripts/data.js...")
-    try:
-        with open("scripts/data.js", "r", encoding="utf-8") as f:
-            data_content = f.read()
-        
-        if f'id: "{paper_id}"' in data_content:
-            print(f"[*] Paper {paper_id} already exists in data.js. Skipping list update.")
-        else:
-            safe_title = title.replace('"', '\\"')
-            safe_authors = authors.replace('"', '\\"')
-            safe_abstract = abstract[:200].replace('"', '\\"').replace('\n', ' ')
-            
-            new_entry = f"""
-    {{
-      id: "{paper_id}",
-      title: "{safe_title}",
-      authors: "{safe_authors}",
-      date: "{curr_date}",
-      abstract: "{safe_abstract}...",
-      originalUrl: "{url}"
-    }}"""
-            
-            updated_content = re.sub(r'(\s*)(\]\s*\}\s*;)', r',\1' + new_entry + r'\1\2', data_content, flags=re.MULTILINE)
-            
-            with open("scripts/data.js", "w", encoding="utf-8") as f:
-                f.write(updated_content)
-            print(f"[*] scripts/data.js updated.")
-    except Exception as e:
-        print(f"[*] Warning: Could not update scripts/data.js automatically: {e}")
+    # 8. Supabase sync is handled separately so the browser list has one source of truth.
+    print(f"[*] Local files are ready. To publish metadata/content to Supabase, run:")
+    print(f"    npm run sync:papers -- --id {paper_id}")
 
     print(f"\n[✔] Setup complete for {paper_id}!")
 

@@ -6,9 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sync:papers": "node scripts/sync-papers.mjs"
   },
   "devDependencies": {
-    "vite": "^5.0.0"
+    "vite": "8.1.3"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.110.0"
   }
 }

@@ -1,5 +1,7 @@
 // scripts/viewer.js
 
+import { fetchPaper } from './paperRepository.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const paperId = urlParams.get('id');
@@ -16,6 +18,101 @@ document.addEventListener('DOMContentLoaded', async () => {
     const compactViewport = window.matchMedia('(max-width: 1024px)');
 
     let isSplitMode = false;
+    let originalBlobUrl = null;
+
+    const setLoading = (message) => {
+        koContent.innerHTML = '';
+
+        const loading = document.createElement('div');
+        loading.className = 'loading';
+        loading.textContent = message;
+        koContent.appendChild(loading);
+    };
+
+    const extractBodyHtml = (html) => {
+        const parsed = new DOMParser().parseFromString(html, 'text/html');
+        const bodyHtml = parsed.body?.innerHTML?.trim();
+        return bodyHtml || html;
+    };
+
+    const getDocumentBaseHref = (path) => {
+        const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
+        const segments = normalizedPath.split('/');
+        segments.pop();
+        return `${window.location.origin}/${segments.join('/')}/`;
+    };
+
+    const injectBaseHref = (html, path) => {
+        if (!path) {
+            return html;
+        }
+
+        const baseTag = `<base href="${getDocumentBaseHref(path)}">`;
+
+        if (/<base\s/i.test(html)) {
+            return html.replace(/<base[^>]*>/i, baseTag);
+        }
+
+        if (/<head[^>]*>/i.test(html)) {
+            return html.replace(/<head([^>]*)>/i, `<head$1>${baseTag}`);
+        }
+
+        return `${baseTag}${html}`;
+    };
+
+    const revokeOriginalBlobUrl = () => {
+        if (originalBlobUrl) {
+            URL.revokeObjectURL(originalBlobUrl);
+            originalBlobUrl = null;
+        }
+    };
+
+    const loadTranslatedHtml = async (paper) => {
+        if (paper.koHtml) {
+            koContent.innerHTML = extractBodyHtml(paper.koHtml);
+            return;
+        }
+
+        if (!paper.koHtmlPath) {
+            setLoading('번역본 경로가 등록되어 있지 않습니다.');
+            return;
+        }
+
+        const response = await fetch(paper.koHtmlPath);
+        if (!response.ok) {
+            setLoading(`번역본을 찾을 수 없습니다. (${response.status})`);
+            return;
+        }
+
+        const koHtml = await response.text();
+        koContent.innerHTML = extractBodyHtml(koHtml);
+    };
+
+    const loadOriginalHtml = (paper) => {
+        revokeOriginalBlobUrl();
+
+        if (origLoading) {
+            origLoading.style.display = 'block';
+        }
+
+        if (paper.origHtml) {
+            const origHtml = injectBaseHref(paper.origHtml, paper.origHtmlPath);
+            const blob = new Blob([origHtml], { type: 'text/html' });
+            originalBlobUrl = URL.createObjectURL(blob);
+
+            origFrame.removeAttribute('src');
+            origFrame.srcdoc = origHtml;
+            return;
+        }
+
+        origFrame.removeAttribute('srcdoc');
+        origFrame.src = paper.origHtmlPath || 'about:blank';
+    };
+
+    const openOriginal = () => {
+        const targetUrl = originalBlobUrl || origFrame.src || 'about:blank';
+        window.open(targetUrl, '_blank', 'noopener');
+    };
 
     const renderToggleButton = () => {
         if (isSplitMode) {
@@ -130,38 +227,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     if (paperId) {
-        // 논문 데이터 로드 (data.js에서)
-        const paperMeta = typeof APP_DATA !== 'undefined'
-            ? APP_DATA.papers.find(p => p.id === paperId)
-            : null;
+        setLoading('한국어 번역본을 불러오고 있습니다...');
 
-        paperTitleEl.textContent = paperMeta ? paperMeta.title : `[${paperId}] 논문 뷰어`;
-
-        // 번역본(ko.html) 로드
         try {
-            const response = await fetch(`papers/${paperId}/ko.html`);
-            if (response.ok) {
-                const koHtml = await response.text();
-                koContent.innerHTML = koHtml;
-            } else {
-                koContent.innerHTML = `<div class="loading">번역본을 찾을 수 없습니다. (${response.status})</div>`;
-            }
+            const paper = await fetchPaper(paperId);
+            paperTitleEl.textContent = paper.title;
+            await loadTranslatedHtml(paper);
+            loadOriginalHtml(paper);
         } catch (e) {
-            koContent.innerHTML = `<div class="loading">번역본 로드 중 오류가 발생했습니다.</div>`;
+            console.error('Failed to load paper:', e);
+            paperTitleEl.textContent = `[${paperId}] 논문 뷰어`;
+            setLoading('Supabase에서 논문 데이터를 불러오지 못했습니다.');
+            origFrame.src = 'about:blank';
         }
-
-        // 원문 로컬 파일 로드 (iframe cors 문제 해결)
-        origFrame.src = `papers/${paperId}/orig.html`;
     } else {
-        paperTitleEl.textContent = "논문을 찾을 수 없습니다.";
-        koContent.innerHTML = `<div class="loading">잘못된 접근입니다. 메인 페이지(index.html)에서 논문을 선택해주세요.</div>`;
+        paperTitleEl.textContent = '논문을 찾을 수 없습니다.';
+        setLoading('잘못된 접근입니다. 메인 페이지(index.html)에서 논문을 선택해주세요.');
         origFrame.src = 'about:blank';
     }
 
-    // Split View Toggle Logic
     toggleSplitBtn.addEventListener('click', () => {
         if (!isSplitMode && compactViewport.matches) {
-            window.open(origFrame.src, '_blank', 'noopener');
+            openOriginal();
             return;
         }
 
@@ -192,13 +279,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderToggleButton();
     });
 
-    // Resizing Logic
     let isResizing = false;
 
     resizer.addEventListener('mousedown', (e) => {
         isResizing = true;
         document.body.style.cursor = 'col-resize';
-        viewerContainer.classList.add('is-resizing'); // 리사이징 상태 클래스 추가
+        viewerContainer.classList.add('is-resizing');
         e.preventDefault();
     });
 
@@ -222,7 +308,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Sync scroll logic
     let isSyncingLeft = false;
     let isSyncingRight = false;
 
@@ -240,7 +325,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const frameWin = origFrame.contentWindow;
             const frameDoc = frameWin.document;
-            // 로컬 파일이므로 접근 가능
             const maxScrollRight = frameDoc.body.scrollHeight - frameWin.innerHeight;
 
             isSyncingRight = true;
@@ -276,6 +360,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.warn('Could not attach scroll listener to iframe:', e);
         }
     });
+
+    window.addEventListener('beforeunload', revokeOriginalBlobUrl);
 
     renderToggleButton();
 });

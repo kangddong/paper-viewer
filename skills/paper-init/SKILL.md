@@ -11,7 +11,7 @@ description: arXiv 논문 ID를 받아 수집 및 번역 환경 구축을 자동
 - 아카이브 ID를 기반으로 자동 URL 생성 (`https://arxiv.org/abs/[ID]`)
 - `scripts/init_paper.py`를 실행하여 원문(`orig.html`), 이미지, 메타데이터 수집
 - 한국어 번역용 스켈레톤 파일(`ko.html`) 생성
-- `scripts/data.js`에 논문 정보 자동 등록
+- `npm run sync:papers -- --id [ID]`로 Supabase `papers` 테이블에 논문 정보 등록
 
 ## 📝 사용 방법
 사용자가 논문 ID를 제공하면 다음 절차를 수행합니다.
@@ -28,7 +28,11 @@ description: arXiv 논문 ID를 받아 수집 및 번역 환경 구축을 자동
     - `ko.html`: 번역용 템플릿
     - `figures/`: 추출된 이미지 폴더
 4.  **후속 작업**: 생성된 `ko.html`을 열고 `docs/translation/TRANSLATION_PLAN_TEMPLATE.md`, `docs/translation/words.md`를 기준으로 번역 작업을 시작합니다.
+5.  **Supabase 동기화**: 번역 초안 또는 완료본을 웹 UI에 노출하려면 아래 명령어를 실행합니다.
+    ```bash
+    npm run sync:papers -- --id [ID]
+    ```
 
 ## ⚠️ 주의 사항
 - arXiv HTML 서비스가 지원되지 않는 논문의 경우 수집이 실패할 수 있습니다.
-- `scripts/data.js` 업데이트 시 중복 등록 여부를 체크해야 합니다.
+- Supabase 동기화에는 서버 전용 키(`SUPABASE_SERVICE_ROLE_KEY` 또는 `SUPABASE_SECRET_KEY`)가 필요합니다. 이 키는 브라우저용 `VITE_` 환경 변수로 노출하지 않습니다.

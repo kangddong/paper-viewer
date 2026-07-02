@@ -1,5 +1,7 @@
 // scripts/app.js
 
+import { fetchPapers } from './paperRepository.js';
+
 document.addEventListener('DOMContentLoaded', () => {
     const paperListElement = document.getElementById('paperList');
     const searchInput = document.getElementById('searchInput');
@@ -7,39 +9,97 @@ document.addEventListener('DOMContentLoaded', () => {
     const gridViewBtn = document.getElementById('gridViewBtn');
     const listViewBtn = document.getElementById('listViewBtn');
 
-    // Render functions
-    const renderPapers = (papers = APP_DATA.papers) => {
+    let papers = [];
+
+    const setStatus = (message) => {
         paperListElement.innerHTML = '';
 
-        if (papers.length === 0) {
-            paperListElement.innerHTML = '<div class="loading-state">검색 결과가 없습니다.</div>';
+        const status = document.createElement('div');
+        status.className = 'loading-state';
+        status.textContent = message;
+        paperListElement.appendChild(status);
+    };
+
+    const appendHighlightedText = (element, text) => {
+        const terms = /(인공지능|AI|하드웨어|HW)/g;
+        let lastIndex = 0;
+        let match;
+
+        while ((match = terms.exec(text)) !== null) {
+            if (match.index > lastIndex) {
+                element.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+            }
+
+            const highlight = document.createElement('span');
+            highlight.className = 'highlight-dotted';
+            highlight.textContent = match[0];
+            element.appendChild(highlight);
+            lastIndex = terms.lastIndex;
+        }
+
+        if (lastIndex < text.length) {
+            element.appendChild(document.createTextNode(text.slice(lastIndex)));
+        }
+    };
+
+    const renderPapers = (visiblePapers = papers) => {
+        paperListElement.innerHTML = '';
+
+        if (visiblePapers.length === 0) {
+            setStatus('검색 결과가 없습니다.');
             return;
         }
 
-        papers.forEach(paper => {
+        visiblePapers.forEach((paper) => {
             const el = document.createElement('article');
             el.className = 'paper-card';
 
             const abstractContent = paper.abstract || '요약 정보가 없습니다.';
-            const shortAbstract = abstractContent.length > 150 ? abstractContent.substring(0, 150) + '...' : abstractContent;
+            const shortAbstract = abstractContent.length > 150
+                ? `${abstractContent.substring(0, 150)}...`
+                : abstractContent;
 
-            el.innerHTML = `
-        <div class="paper-meta">
-          <span class="paper-authors">${paper.authors || 'Unknown'}</span>
-          <span class="paper-date">${paper.date || ''}</span>
-        </div>
-        <h2 class="paper-title">${paper.title}</h2>
-        <p class="paper-abstract">${shortAbstract.replace(/(인공지능|AI|하드웨어|HW)/g, '<span class="highlight-dotted">$1</span>')}</p>
-        <div class="card-actions">
-          <a href="${paper.originalUrl}" target="_blank" class="btn btn-outline">원문 보기</a>
-          <a href="paper.html?id=${paper.id}" class="btn btn-primary">번역본 읽기</a>
-        </div>
-      `;
+            const meta = document.createElement('div');
+            meta.className = 'paper-meta';
+
+            const authors = document.createElement('span');
+            authors.className = 'paper-authors';
+            authors.textContent = paper.authors || 'Unknown';
+
+            const date = document.createElement('span');
+            date.className = 'paper-date';
+            date.textContent = paper.date || '';
+
+            const title = document.createElement('h2');
+            title.className = 'paper-title';
+            title.textContent = paper.title;
+
+            const abstract = document.createElement('p');
+            abstract.className = 'paper-abstract';
+            appendHighlightedText(abstract, shortAbstract);
+
+            const actions = document.createElement('div');
+            actions.className = 'card-actions';
+
+            const originalLink = document.createElement('a');
+            originalLink.href = paper.originalUrl;
+            originalLink.target = '_blank';
+            originalLink.rel = 'noopener';
+            originalLink.className = 'btn btn-outline';
+            originalLink.textContent = '원문 보기';
+
+            const translationLink = document.createElement('a');
+            translationLink.href = `paper.html?id=${encodeURIComponent(paper.id)}`;
+            translationLink.className = 'btn btn-primary';
+            translationLink.textContent = '번역본 읽기';
+
+            meta.append(authors, date);
+            actions.append(originalLink, translationLink);
+            el.append(meta, title, abstract, actions);
             paperListElement.appendChild(el);
         });
     };
 
-    // View toggle logic
     gridViewBtn.addEventListener('click', () => {
         paperListElement.classList.remove('list-view');
         gridViewBtn.classList.add('active');
@@ -52,10 +112,9 @@ document.addEventListener('DOMContentLoaded', () => {
         gridViewBtn.classList.remove('active');
     });
 
-    // Search logic
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
-        const filtered = APP_DATA.papers.filter(p =>
+        const filtered = papers.filter((p) =>
             p.title.toLowerCase().includes(query) ||
             (p.authors && p.authors.toLowerCase().includes(query)) ||
             (p.abstract && p.abstract.toLowerCase().includes(query))
@@ -68,6 +127,17 @@ document.addEventListener('DOMContentLoaded', () => {
         renderPapers();
     });
 
-    // Initial render
-    renderPapers();
+    const init = async () => {
+        setStatus('논문 데이터를 불러오는 중...');
+
+        try {
+            papers = await fetchPapers();
+            renderPapers();
+        } catch (error) {
+            console.error('Failed to load papers:', error);
+            setStatus('Supabase에서 논문 데이터를 불러오지 못했습니다. 환경 변수와 RLS 정책을 확인해주세요.');
+        }
+    };
+
+    init();
 });
